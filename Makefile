@@ -1,27 +1,33 @@
 .PHONY: autoscaler jobs nomad plugins proxy web consul
 
 nomad:
-	sudo /home/eveld/go/bin/nomad agent -config=nomad/server.hcl
+	sudo rm -rf /tmp/nomad || true
+	sudo nomad agent -config=nomad/server.hcl
 
 consul:
+	sudo rm -rf /tmp/consul || true
 	consul agent -config-file consul/server.hcl
 
 autoscaler:
-	/home/eveld/go/bin/nomad-autoscaler run -config=autoscaler/config.hcl
-
-apps: monitoring ingress web-v1
+	nomad run jobs/autoscaler.hcl
 
 monitoring:
-	/home/eveld/go/bin/nomad run jobs/monitoring.hcl
+	nomad run jobs/monitoring.hcl
 
 ingress:
-	/home/eveld/go/bin/nomad run jobs/ingress.hcl
+	nomad run jobs/ingress.hcl
 
-web-v1:
-	/home/eveld/go/bin/nomad run jobs/web-v1.hcl
+web:
+	nomad run jobs/web.hcl
 
-web-v2:
-	/home/eveld/go/bin/nomad run jobs/web-v2.hcl
+web-nomad:
+	nomad run jobs/web-nomad-metrics.hcl
+
+web-prometheus:
+	nomad run jobs/web-prometheus-metrics.hcl
+
+web-latency:
+	nomad run jobs/web-latency.hcl
 
 load:
 	hey -z 5m -c 30 http://127.0.0.1:8080

@@ -9,6 +9,11 @@ server {
 
 client {
   enabled = true
+
+  host_volume "plugins" {
+    path = "/opt/nomad-autoscaler/plugins"
+    read_only = true
+  }
 }
 
 telemetry {

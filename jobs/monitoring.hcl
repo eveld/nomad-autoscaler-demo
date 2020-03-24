@@ -60,7 +60,7 @@ EOH
         ]
 
         port_map {
-          prometheus_ui = 9090
+          ui = 9090
         }
       }
 
@@ -71,7 +71,7 @@ EOH
         network {
           mbits = 10
 
-          port "prometheus_ui" {
+          port "ui" {
             static = 9090
           }
         }
@@ -80,10 +80,10 @@ EOH
       service {
         name = "prometheus"
         tags = ["urlprefix-/"]
-        port = "prometheus_ui"
+        port = "ui"
 
         check {
-          name     = "prometheus_ui port alive"
+          name     = "ui port alive"
           type     = "http"
           path     = "/-/healthy"
           interval = "10s"
@@ -104,6 +104,36 @@ EOH
     }
 
     task "grafana" {
+      artifact {
+        source      = "https://raw.githubusercontent.com/eveld/autoscaler/master/jobs/grafana/dashboard.json"
+        destination = "local/dashboard.json"
+      }
+
+      template {
+        data = <<EOF
+- name: 'default'
+  org_id: 1
+  folder: ''
+  type: 'file'
+  options:
+    folder: '/var/lib/grafana/dashboards'
+        EOF
+        destination = "local/dashboard.yaml"
+      }
+
+      template {
+        data = <<EOF
+apiVersion: 1
+datasources:
+- name: Prometheus
+  type: prometheus
+  url: http://{{ env "attr.unique.network.ip-address" }}:9090
+  access: proxy
+  isDefault: true
+        EOF
+        destination = "local/datasource.yaml"
+      }
+
       driver = "docker"
 
       config {
@@ -112,6 +142,12 @@ EOH
         port_map {
           grafana_ui = 3000
         }
+
+        volumes = [
+          "local/dashboard.json:/var/lib/grafana/dashboards/default/",
+          "local/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml",
+          "local/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml"
+        ]
       }
 
       resources {

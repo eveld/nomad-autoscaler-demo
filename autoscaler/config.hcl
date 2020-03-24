@@ -1,4 +1,4 @@
-plugin_dir = "./plugins"
+plugin_dir = "autoscaler/plugins"
 
 scan_interval = "5s"
 
